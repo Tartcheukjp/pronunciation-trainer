@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Pronunciation Trainer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#f0f0ee; font-family:'Trebuchet MS','Segoe UI',sans-serif; }
+    @keyframes pop{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    .pop { animation: pop 0.4s ease; }
+    .shake { animation: shake 0.4s ease; }
+    .pulse { animation: pulse 0.7s ease infinite; }
+    .spin { animation: spin 1s linear infinite; display:inline-block; }
+    button { font-family: inherit; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { useState, useEffect, useRef, createElement: h } = React;
+
+// ── Data ──────────────────────────────────────────────────────────────
+const DATA = {
+  samsonite: {
+    luggage: ["73H","ARQ","ASTRA","BASE BOOST","BEAMIX","C-LITE","C-LITE X JEAN-MICHEL BASQUIAT","COSMOLITE","CUBE-048","CUBIX","EVOA","EVOA TECH","EVOA Z","FLATFORM","FYRM","HI-FI","INTERLACE","LITE-BOX","LITE-BOX ALU","LITE-BOX ALU / BOSS","MAGNUM","MAGNUM ECO","MINTER","MOMENTUS","MYTON","NIAR","OCTOLITE NEO","PARALUX HS","PROXIS ALU","PROXIS","RESPARK","ROBEZ","SAMMIES DREAMS","SBL FANTHOM","SBL MAJOR-LITE","SBL METANOVA","SBL RE.CLASSIC","SBL RICHMOND","SBL RICHMOND II","STEM","STRARIUM","TOIIS BLOSSOM","TOIIS C","TOIIS L","TOIIS M","TOIIS XP","UNIMAX","UPSCAPE","VOLANT","VOYPOD","ZENPOD","ZIPPRIX","ZIPPRIX FT","ZIRA"],
+    backpack: ["4PACK","ABBEY","AUDRINA","BE-HER","BIRNIE","BIZ2GO","CARLEIGH","CITYSCAPE II","ELLWOOD","ENCOMPASS-WOMENS","ENDERBY","EVERY-TIME 2","GANNERS","JEFFERY","KARISSA EVO","LOCHHILL","LORNNE","LYNDON","MARSTON 2","MOVE 4","NEW STREAMLITE","NOBERT","ONGOING","OPENROAD","OSLER","PARALUX BT","PLANTPACK 10","PRO-DLX 6","PRUDENCE ECO","RELYON","ROADER","ROTHES","SAMMIES DREAMS","SBL ENCODE","SBL RE.CLASSIC","SECURIPAK 2","SUB-LIM","TILLOU","UNDERSCORE","UP-LINE","URBAN-EYE DLX","URBANIX","VALERIE","VECTURA EVO","VICKSON","ZALIA 3"],
+    bag: ["AQUARIUS","AUDRINA","BATISON","BE-HER","BIRNIE","CAMDEN SMSNT","CARLOW","CARMONT","CROTEL","DARNFORD","DUMFRI","ELDERT","ENCOMPASS-WOMENS","ENDERBY","FERLEY","JEFFERSON","KARISSA 2","KARISSA EVO","LEAH","LOCHHILL","LORNNE","LYNDON","MARMION","MARSTON","MARSTON 2","MINTER","MOVE 3","MOVE 4","MY SAMSONITE","NEW STREAMLITE","NOBERT","OPENROAD","OSLER","PLANTPACK 3","POLYGON","PRO-DLX 6","PRUDENCE ECO","ROTHES","SBL MYLES","SBL RE.CLASSIC","SBL VERON II","SEFTON","SEMLIN","SKYLER 2","SOMERVIL","STEM","TAUTON","TOIIS C","TRAVEL ESSENTIALS","UNDERSCORE","UP-LINE","URBAN-EYE DLX","URBANIX","VALERIE","VECTURA EVO","VESTOR","VICKSON","VIGON II","WILGENA","XENON 4","ZALIA 3"],
+  },
+  at: {
+    luggage: ["AEROSTEP","AIRCONIC","APPLITE 5","ARGYLE","CURIO","DIAZIP","DROYCE","FRONTEC","GEMINA PRO","LINEX E","LITTLE CURIO","LITTLE FRONTEC","PAXTRA","SKITTLE NXT","SKYTRAC","SQUASEM"],
+    backpack: ["CARTER 2","RILEY","URBAN GROOVE","TAKE2CABIN","ROADER","CITY DRIFT","ACTIV8"],
+    bag: ["CARTER 2","URBAN GROOVE","CITY DRIFT","TAKE2CABIN"],
+  },
+};
+
+const PH = {"73H":"seventy three H","4PACK":"four pack","ARQ":"ark","ASTRA":"astra","BASE BOOST":"base boost","BEAMIX":"bee mix","C-LITE":"see lite","C-LITE X JEAN-MICHEL BASQUIAT":"see lite by jean michel basquiat","COSMOLITE":"cosmolite","CUBE-048":"cube zero four eight","CUBIX":"cubix","EVOA":"evoa","EVOA TECH":"evoa tech","EVOA Z":"evoa z","FLATFORM":"flatform","FYRM":"firm","HI-FI":"hi fi","INTERLACE":"interlace","LITE-BOX":"lite box","LITE-BOX ALU":"lite box alu","LITE-BOX ALU / BOSS":"lite box alu boss","MAGNUM":"magnum","MAGNUM ECO":"magnum eco","MINTER":"minter","MOMENTUS":"momentus","MYTON":"myton","NIAR":"niar","OCTOLITE NEO":"octolite neo","PARALUX HS":"paralux h s","PROXIS ALU":"proxis alu","PROXIS":"proxis","RESPARK":"respark","ROBEZ":"robez","SAMMIES DREAMS":"sammies dreams","SBL FANTHOM":"s b l fanthom","SBL MAJOR-LITE":"s b l major lite","SBL METANOVA":"s b l metanova","SBL RE.CLASSIC":"s b l re classic","SBL RICHMOND":"s b l richmond","SBL RICHMOND II":"s b l richmond two","STEM":"stem","STRARIUM":"strarium","TOIIS BLOSSOM":"toys blossom","TOIIS C":"toys c","TOIIS L":"toys l","TOIIS M":"toys m","TOIIS XP":"toys x p","UNIMAX":"unimax","UPSCAPE":"upscape","VOLANT":"volant","VOYPOD":"voypod","ZENPOD":"zenpod","ZIPPRIX":"zipprix","ZIPPRIX FT":"zipprix f t","ZIRA":"zira","ABBEY":"abbey","AUDRINA":"audrina","BE-HER":"be her","BIRNIE":"birnie","BIZ2GO":"biz to go","CARLEIGH":"carleigh","CITYSCAPE II":"cityscape two","ELLWOOD":"ellwood","ENCOMPASS-WOMENS":"encompass womens","ENDERBY":"enderby","EVERY-TIME 2":"every time two","GANNERS":"ganners","JEFFERY":"jeffery","KARISSA EVO":"karissa evo","KARISSA 2":"karissa two","LOCHHILL":"lochhill","LORNNE":"lorne","LYNDON":"lyndon","MARSTON 2":"marston two","MARSTON":"marston","MOVE 4":"move four","MOVE 3":"move three","NEW STREAMLITE":"new streamlite","NOBERT":"nobert","ONGOING":"ongoing","OPENROAD":"openroad","OSLER":"osler","PARALUX BT":"paralux b t","PLANTPACK 10":"plantpack ten","PLANTPACK 3":"plantpack three","PRO-DLX 6":"pro deluxe six","PRUDENCE ECO":"prudence eco","RELYON":"relyon","ROADER":"roader","ROTHES":"rothes","SBL ENCODE":"s b l encode","SBL MYLES":"s b l myles","SBL VERON II":"s b l veron two","SECURIPAK 2":"securipak two","SUB-LIM":"sub lim","TILLOU":"tillou","UNDERSCORE":"underscore","UP-LINE":"up line","URBAN-EYE DLX":"urban eye deluxe","URBANIX":"urbanix","VALERIE":"valerie","VECTURA EVO":"vectura evo","VICKSON":"vickson","ZALIA 3":"zalia three","AQUARIUS":"aquarius","BATISON":"batison","CAMDEN SMSNT":"camden samsonite","CARLOW":"carlow","CARMONT":"carmont","CROTEL":"crotel","DARNFORD":"darnford","DUMFRI":"dumfri","ELDERT":"eldert","FERLEY":"ferley","JEFFERSON":"jefferson","LEAH":"leah","MARMION":"marmion","MY SAMSONITE":"my samsonite","POLYGON":"polygon","SEFTON":"sefton","SEMLIN":"semlin","SKYLER 2":"skyler two","SOMERVIL":"somervil","TAUTON":"tauton","TRAVEL ESSENTIALS":"travel essentials","VESTOR":"vestor","VIGON II":"vigon two","WILGENA":"wilgena","XENON 4":"xenon four","AEROSTEP":"aerostep","AIRCONIC":"airconic","APPLITE 5":"applite five","ARGYLE":"argyle","CARTER 2":"carter two","CURIO":"curio","DIAZIP":"diazip","DROYCE":"droyce","FRONTEC":"frontec","GEMINA PRO":"gemina pro","LINEX E":"linex e","LITTLE CURIO":"little curio","LITTLE FRONTEC":"little frontec","PAXTRA":"paxtra","RILEY":"riley","SKITTLE NXT":"skittle next","SKYTRAC":"skytrac","SQUASEM":"squasem","URBAN GROOVE":"urban groove","TAKE2CABIN":"take to cabin","CITY DRIFT":"city drift","ACTIV8":"activate"};
+const gp = n => PH[n] || n.toLowerCase().replace(/-/g," ");
+
+function norm(s){return s.toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();}
+function lev(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);return dp[m][n];}
+function sim(heard,exp){const h=norm(heard),e=norm(exp);if(h===e)return 1;const hw=new Set(h.split(" ").filter(Boolean)),ew=e.split(" ").filter(Boolean);if(!ew.length)return 0;return ew.filter(w=>{if(hw.has(w))return true;for(const x of hw)if(lev(x,w)<=1)return true;return false;}).length/ew.length;}
+
+const BRANDS={samsonite:{label:"Samsonite",color:"#B5091F"},at:{label:"American Tourister",color:"#0055a5"}};
+const CATS=[{key:"luggage",label:"行李箱",emoji:"🧳"},{key:"backpack",label:"背囊",emoji:"🎒"},{key:"bag",label:"袋",emoji:"👜"}];
+
+// Speaker SVG
+function Speaker({on,size=16}){
+  return h("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none"},
+    h("path",{d:"M11 5L6 9H2v6h4l5 4V5z",fill:"currentColor"}),
+    on ? [
+      h("path",{key:"a",d:"M15.54 8.46a5 5 0 010 7.07",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"}),
+      h("path",{key:"b",d:"M19.07 4.93a10 10 0 010 14.14",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"})
+    ] : h("path",{d:"M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",opacity:0.25})
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────
+function App(){
+  const [brand,setBrand]=useState("samsonite");
+  const [cat,setCat]=useState("luggage");
+  const [mode,setMode]=useState("browse");
+  const [search,setSearch]=useState("");
+  const [playing,setPlaying]=useState(null);
+  const [scores,setScores]=useState({});
+
+  const color=BRANDS[brand].color;
+  const products=DATA[brand]?.[cat]||[];
+  const filtered=products.filter(p=>p.toLowerCase().includes(search.toLowerCase()));
+  const sk=name=>`${brand}-${cat}-${name}`;
+  const gs=name=>scores[sk(name)]||{attempts:0,correct:0};
+  const tA=products.reduce((s,n)=>s+gs(n).attempts,0);
+  const tC=products.reduce((s,n)=>s+gs(n).correct,0);
+  const mas=products.filter(n=>{const s=gs(n);return s.attempts>=2&&s.correct/s.attempts>=0.8;}).length;
+
+  const speak=(name,rate=0.82)=>{
+    window.speechSynthesis.cancel();
+    if(playing===name&&rate===0.82){setPlaying(null);return;}
+    const u=new SpeechSynthesisUtterance(name);
+    u.lang="en-US";u.rate=rate;
+    u.onend=()=>setPlaying(null);u.onerror=()=>setPlaying(null);
+    setPlaying(name);window.speechSynthesis.speak(u);
+  };
+  useEffect(()=>()=>window.speechSynthesis.cancel(),[]);
+
+  const s=o=>Object.assign({},o); // style helper
+
+  return h("div",{style:{minHeight:"100vh",background:"#f0f0ee"}},
+    // Header
+    h("div",{style:{background:color,transition:"background 0.3s"}},
+      h("div",{style:{maxWidth:740,margin:"0 auto",padding:"16px 16px 0"}},
+        h("div",{style:{color:"rgba(255,255,255,0.4)",fontSize:9,letterSpacing:4,textTransform:"uppercase",fontFamily:"monospace",marginBottom:2}},"Product Pronunciation Trainer"),
+        // Brand row
+        h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+          Object.entries(BRANDS).map(([k,b])=>
+            h("button",{key:k,onClick:()=>{setBrand(k);setSearch("");window.speechSynthesis.cancel();setPlaying(null);},
+              style:{padding:"4px 12px",border:`1.5px solid rgba(255,255,255,${brand===k?0.7:0.3})`,borderRadius:20,cursor:"pointer",
+                background:brand===k?"rgba(255,255,255,0.18)":"transparent",
+                color:"#fff",fontSize:12,fontWeight:brand===k?700:400}},b.label)
+          ),
+          tA>0&&h("div",{style:{marginLeft:"auto",background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"3px 10px",fontSize:10,color:"rgba(255,255,255,0.85)",fontFamily:"monospace"}},
+            `✓ ${tC}/${tA} · 🏆 ${mas}/${products.length}`)
+        ),
+        // Cat + mode tabs
+        h("div",{style:{display:"flex",gap:2,alignItems:"flex-end"}},
+          CATS.map(c=>
+            h("button",{key:c.key,onClick:()=>{setCat(c.key);setSearch("");setPlaying(null);window.speechSynthesis.cancel();},
+              style:{padding:"7px 12px",border:"none",cursor:"pointer",fontSize:12,fontWeight:600,
+                borderRadius:"6px 6px 0 0",marginRight:1,
+                background:cat===c.key?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.1)",
+                color:cat===c.key?color:"rgba(255,255,255,0.8)"}},
+              `${c.emoji} ${c.label} (${(DATA[brand]?.[c.key]||[]).length})`)
+          ),
+          h("div",{style:{flex:1}}),
+          h("div",{style:{display:"flex",background:"rgba(0,0,0,0.18)",borderRadius:"6px 6px 0 0",overflow:"hidden"}},
+            [["browse","📖 瀏覽"],["practice","🎤 練習"]].map(([m,l])=>
+              h("button",{key:m,onClick:()=>{setMode(m);setSearch("");},
+                style:{padding:"7px 13px",border:"none",cursor:"pointer",fontSize:12,fontWeight:600,
+                  background:mode===m?"rgba(255,255,255,0.95)":"transparent",
+                  color:mode===m?color:"rgba(255,255,255,0.75)"}},l)
+            )
+          )
+        )
+      )
+    ),
+    mode==="browse"
+      ? h(BrowseMode,{products:filtered,search,setSearch,color,playing,speak,getScore:gs})
+      : h(PracticeMode,{products,color,brand,cat,speak,scores,setScores,scoreKey:sk})
+  );
+}
+
+// ── Browse Mode ───────────────────────────────────────────────────────
+function BrowseMode({products,search,setSearch,color,playing,speak,getScore}){
+  return h("div",null,
+    h("div",{style:{background:"#fff",borderBottom:"1px solid #e8e8e8",position:"sticky",top:0,zIndex:10,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}},
+      h("div",{style:{maxWidth:740,margin:"0 auto",padding:"8px 16px"}},
+        h("div",{style:{position:"relative"}},
+          h("span",{style:{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",opacity:0.3}},"🔍"),
+          h("input",{type:"text",placeholder:"搜尋系列...",value:search,onChange:e=>setSearch(e.target.value),
+            style:{width:"100%",padding:"8px 12px 8px 30px",fontSize:14,border:`1.5px solid ${color}28`,
+              borderRadius:8,outline:"none",boxSizing:"border-box",background:"#fafafa"}})
+        ),
+        h("div",{style:{marginTop:3,color:"#bbb",fontSize:11,fontFamily:"monospace"}},`${products.length} 個系列 · 點卡片聽發音`)
+      )
+    ),
+    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"12px 16px 48px",
+      display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(148px, 1fr))",gap:8}},
+      products.map(name=>{
+        const on=playing===name;
+        const sc=getScore(name);
+        const pct=sc.attempts?Math.round(sc.correct/sc.attempts*100):-1;
+        const ms=pct>=80&&sc.attempts>=2;
+        return h("button",{key:name,onClick:()=>speak(name),
+          style:{background:on?color:"#fff",border:`2px solid ${on?color:ms?"#10b981":pct>=0?"#f59e0b":"#e5e5e5"}`,
+            borderRadius:11,padding:"12px 10px",cursor:"pointer",textAlign:"left",
+            transition:"all 0.12s",transform:on?"scale(0.96)":"scale(1)",
+            boxShadow:on?`0 4px 14px ${color}40`:"0 1px 3px rgba(0,0,0,0.06)",position:"relative"}},
+          ms&&h("span",{style:{position:"absolute",top:-6,right:-6,fontSize:12}},"🏆"),
+          pct>=0&&!ms&&h("span",{style:{position:"absolute",top:-6,right:-5,
+            background:pct>=60?"#fef3c7":"#fee2e2",color:pct>=60?"#92400e":"#991b1b",
+            fontSize:9,fontWeight:700,padding:"1px 4px",borderRadius:5,fontFamily:"monospace"}},`${pct}%`),
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:3,marginBottom:5}},
+            h("span",{style:{fontSize:12,fontWeight:700,letterSpacing:0.3,lineHeight:1.3,
+              color:on?"#fff":"#111",wordBreak:"break-word"}},name),
+            h("span",{style:{color:on?"rgba(255,255,255,0.85)":color,flexShrink:0,marginTop:1}},h(Speaker,{on}))
+          ),
+          h("div",{style:{fontSize:9.5,fontFamily:"monospace",color:on?"rgba(255,255,255,0.55)":"#bbb"}},`/${gp(name)}/`)
+        );
+      })
+    )
+  );
+}
+
+// ── Practice Mode ─────────────────────────────────────────────────────
+function PracticeMode({products,color,brand,cat,speak,scores,setScores,scoreKey}){
+  const [queue,setQueue]=useState([]);
+  const [idx,setIdx]=useState(0);
+  const [phase,setPhase]=useState("idle");
+  const [countdown,setCountdown]=useState(3);
+  const [heard,setHeard]=useState("");
+  const [score,setScore]=useState(null);
+  const [hint,setHint]=useState(false);
+  const [sess,setSess]=useState({correct:0,total:0});
+  const [err,setErr]=useState(null);
+  const ivRef=useRef(null);
+  const recRef=useRef(null);
+
+  useEffect(()=>{
+    const s=[...products].sort(()=>Math.random()-0.5);
+    setQueue(s);setIdx(0);setPhase("idle");setScore(null);setHeard("");setHint(false);setSess({correct:0,total:0});setErr(null);
+  },[brand,cat]);
+
+  const current=queue[idx]||null;
+
+  const doRecord=()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){setErr("請用 Chrome 瀏覽器");setPhase("idle");return;}
+    const r=new SR();
+    r.lang="en-US";r.interimResults=false;r.maxAlternatives=5;
+    recRef.current=r;
+    r.onresult=e=>{
+      const results=Array.from(e.results[0]).map(x=>x.transcript);
+      const exp=gp(current);
+      const best=results.reduce((b,h)=>{const s=sim(h,exp);return s>b.score?{score:s,h}:b;},{score:0,h:results[0]});
+      setHeard(best.h);setScore(best.score);
+      const ok=best.score>=0.6;
+      setPhase("result");
+      setSess(s=>({correct:s.correct+(ok?1:0),total:s.total+1}));
+      setScores(prev=>{const k=scoreKey(current);const old=prev[k]||{attempts:0,correct:0};return{...prev,[k]:{attempts:old.attempts+1,correct:old.correct+(ok?1:0)}};});
+    };
+    r.onerror=e=>{
+      if(e.error==="not-allowed")setErr("請允許麥克風權限後重試");
+      else if(e.error==="no-speech")setErr("聽唔到聲音，請再試");
+      else setErr(`錯誤：${e.error}`);
+      setPhase("idle");
+    };
+    r.start();
+    setPhase("recording");
+  };
+
+  const start=()=>{
+    window.speechSynthesis.cancel();
+    try{recRef.current?.abort();}catch(e){}
+    setPhase("countdown");setCountdown(3);setScore(null);setHeard("");setHint(false);setErr(null);
+    let c=3;
+    ivRef.current=setInterval(()=>{c--;setCountdown(c);if(c===0){clearInterval(ivRef.current);doRecord();}},1000);
+  };
+
+  const next=()=>{
+    try{recRef.current?.abort();}catch(e){}
+    setIdx(i=>(i+1)%queue.length);setPhase("idle");setScore(null);setHeard("");setHint(false);setErr(null);
+  };
+
+  if(!current)return null;
+  const passed=score!==null&&score>=0.6;
+  const rc=score===null?color:passed?"#059669":"#dc2626";
+  const rb=score===null?"#fff":passed?"#f0fdf4":"#fef2f2";
+  const anim=score!==null?(passed?"pop":"shake"):"";
+
+  return h("div",{style:{maxWidth:600,margin:"0 auto",padding:"20px 16px 48px"}},
+    // Progress
+    h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:18}},
+      h("div",{style:{flex:1,height:5,background:"#e5e5e5",borderRadius:3,overflow:"hidden"}},
+        h("div",{style:{width:`${((idx+1)/queue.length)*100}%`,height:"100%",background:color,borderRadius:3,transition:"width 0.4s"}})
+      ),
+      h("span",{style:{fontSize:11,color:"#999",fontFamily:"monospace"}},`${idx+1}/${queue.length}`),
+      h("span",{style:{fontSize:11,color:"#10b981",fontFamily:"monospace"}},`${sess.correct}/${sess.total} ✓`)
+    ),
+    // Error
+    err&&h("div",{style:{background:"#fff7ed",border:"1.5px solid #fed7aa",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#9a3412",display:"flex",gap:8}},
+      h("span",null,"⚠️"),h("span",null,err)
+    ),
+    // Card
+    h("div",{className:anim,style:{background:rb,border:`2.5px solid ${rc}30`,borderRadius:20,padding:"28px 24px",textAlign:"center",
+      boxShadow:score!==null?`0 8px 32px ${rc}20`:"0 4px 20px rgba(0,0,0,0.08)"}},
+      h("div",{style:{fontSize:30,fontWeight:800,letterSpacing:1,color:score!==null?rc:"#111",marginBottom:6,lineHeight:1.2}},current),
+      h("button",{onClick:()=>setHint(h=>!h),style:{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:11,fontFamily:"monospace",marginBottom:14}},
+        hint?`/${gp(current)}/`:"👁 發音提示"),
+      h("div",{style:{display:"flex",justifyContent:"center",gap:8,marginBottom:22}},
+        [["🔊 聽示範",0.82],["🐢 慢速",0.52]].map(([l,r])=>
+          h("button",{key:l,onClick:()=>speak(current,r),style:{padding:"8px 14px",background:"#fff",border:`1.5px solid ${color}35`,borderRadius:18,cursor:"pointer",color,fontWeight:600,fontSize:12}},l)
+        )
+      ),
+      phase==="idle"&&h("button",{onClick:start,style:{width:"100%",padding:"16px",fontSize:17,fontWeight:700,
+        background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",border:"none",borderRadius:14,cursor:"pointer",boxShadow:`0 4px 16px ${color}45`}},"🎤 開始錄音"),
+      phase==="countdown"&&h("div",{style:{fontSize:64,fontWeight:900,color,lineHeight:1}},countdown===0?"🎙":countdown),
+      phase==="recording"&&h("div",{style:{padding:"12px 0"}},
+        h("div",{className:"pulse",style:{fontSize:38,marginBottom:6}},"🎙"),
+        h("div",{style:{color:"#555",fontWeight:600,fontSize:13,marginBottom:10}},"聆聽中，請大聲讀出產品名稱…"),
+        h("button",{onClick:()=>{try{recRef.current?.abort();}catch(e){}setPhase("idle");},
+          style:{padding:"6px 14px",background:"none",border:"1.5px solid #ddd",borderRadius:8,cursor:"pointer",color:"#999",fontSize:12}},"取消")
+      ),
+      phase==="result"&&score!==null&&h("div",{className:"pop"},
+        h("div",{style:{fontSize:44,marginBottom:6}},passed?"🎉":"😅"),
+        h("div",{style:{fontSize:20,fontWeight:800,color:rc,marginBottom:5}},passed?"答啱！":"繼續加油！"),
+        h("div",{style:{fontSize:12,color:"#666",marginBottom:3}},"系統聽到：",h("strong",{style:{color:"#333"}},`「${heard}」`)),
+        h("div",{style:{fontSize:12,color:"#666",marginBottom:10}},"正確讀法：",
+          h("strong",{style:{color}},current),
+          h("span",{style:{color:"#bbb",fontFamily:"monospace"}},` /${gp(current)}/`)
+        ),
+        h("div",{style:{display:"flex",alignItems:"center",gap:6,margin:"8px 0 14px"}},
+          h("span",{style:{fontSize:10,color:"#bbb",width:24,textAlign:"right"}},"0"),
+          h("div",{style:{flex:1,height:7,background:"#e5e5e5",borderRadius:4,overflow:"hidden"}},
+            h("div",{style:{width:`${Math.round(score*100)}%`,height:"100%",borderRadius:4,transition:"width 0.7s ease",
+              background:`linear-gradient(90deg,${score<0.4?"#ef4444":score<0.6?"#f59e0b":"#10b981"},${score>=0.6?"#059669":"#dc2626"})`}})
+          ),
+          h("span",{style:{fontSize:12,fontWeight:700,color:rc,width:36}},`${Math.round(score*100)}%`)
+        ),
+        h("div",{style:{display:"flex",gap:8}},
+          h("button",{onClick:start,style:{flex:1,padding:"11px",fontSize:13,fontWeight:700,background:"#fff",border:`2px solid ${color}`,borderRadius:11,cursor:"pointer",color}},"🔄 重試"),
+          h("button",{onClick:next,style:{flex:2,padding:"11px",fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",border:"none",borderRadius:11,cursor:"pointer"}},"下一個 →")
+        )
+      )
+    ),
+    h(ScoreBoard,{products:queue,scoreKey,scores,color})
+  );
+}
+
+function ScoreBoard({products,scoreKey,scores,color}){
+  const [open,setOpen]=useState(false);
+  const tried=products.filter(n=>(scores[scoreKey(n)]||{}).attempts>0);
+  if(!tried.length)return null;
+  return h("div",{style:{marginTop:16}},
+    h("button",{onClick:()=>setOpen(o=>!o),style:{width:"100%",padding:"10px",background:"#fff",border:"1.5px solid #e5e5e5",borderRadius:12,cursor:"pointer",fontSize:13,color:"#666",fontWeight:600}},
+      `${open?"▲":"▼"} 成績單 (${tried.length}/${products.length} 已練習)`),
+    open&&h("div",{style:{background:"#fff",border:"1.5px solid #e5e5e5",borderRadius:12,marginTop:4,overflow:"hidden"}},
+      tried.map(name=>{
+        const s=scores[scoreKey(name)]||{attempts:0,correct:0};
+        const pct=s.attempts?Math.round(s.correct/s.attempts*100):0;
+        const m=s.attempts>=2&&pct>=80;
+        return h("div",{key:name,style:{display:"flex",alignItems:"center",padding:"7px 12px",borderBottom:"1px solid #f0f0f0",gap:8}},
+          h("span",{style:{fontSize:13}},m?"🏆":pct>=60?"🟡":"🔴"),
+          h("span",{style:{flex:1,fontSize:12,fontWeight:600}},name),
+          h("span",{style:{fontFamily:"monospace",fontSize:10,color:"#aaa"}},`${s.correct}/${s.attempts}`),
+          h("div",{style:{width:55,height:4,background:"#f0f0f0",borderRadius:2,overflow:"hidden"}},
+            h("div",{style:{width:`${pct}%`,height:"100%",borderRadius:2,background:pct>=80?"#10b981":pct>=60?"#f59e0b":"#ef4444"}})
+          ),
+          h("span",{style:{fontFamily:"monospace",fontSize:10,width:28,textAlign:"right",color:pct>=80?"#059669":pct>=60?"#b45309":"#dc2626"}},`${pct}%`)
+        );
+      })
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App,null));
+</script>
+</body>
+</html>
