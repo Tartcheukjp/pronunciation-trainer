@@ -138,6 +138,113 @@ function Speaker({on,size=16}){
   );
 }
 
+// ── Install Modal ─────────────────────────────────────────────────────
+const STEPS = {
+  ios: {
+    zh: [
+      ["1", "用 Safari 打開網址", "必須用 Safari，其他瀏覽器唔得"],
+      ["2", "撳底部分享按鈕", "個樣係一個方形向上有箭咀 ⬆"],
+      ["3", "向下滾，揀「加入主畫面」", "Add to Home Screen"],
+      ["4", "撳右上角「新增」", "App 就會出現喺主畫面 ✓"],
+    ],
+    en: [
+      ["1", "Open this link in Safari", "Must use Safari — other browsers won't work"],
+      ["2", "Tap the Share button at the bottom", "It looks like a box with an arrow pointing up ⬆"],
+      ["3", "Scroll down and tap 'Add to Home Screen'", "加入主畫面"],
+      ["4", "Tap 'Add' in the top right", "The app icon will appear on your home screen ✓"],
+    ],
+  },
+  android: {
+    zh: [
+      ["1", "用 Chrome 打開網址", "建議用 Chrome 瀏覽器"],
+      ["2", "撳右上角三點選單 ⋮", ""],
+      ["3", "揀「新增至主螢幕」", "Add to Home screen"],
+      ["4", "撳「新增」確認", "App 就會出現喺主畫面 ✓"],
+    ],
+    en: [
+      ["1", "Open this link in Chrome", "Chrome browser recommended"],
+      ["2", "Tap the three-dot menu ⋮ in the top right", ""],
+      ["3", "Tap 'Add to Home screen'", "新增至主螢幕"],
+      ["4", "Tap 'Add' to confirm", "The app icon will appear on your home screen ✓"],
+    ],
+  },
+};
+
+function InstallModal({onClose,lang,setLang,color}){
+  const [os,setOs]=useState("ios");
+  const steps=STEPS[os][lang];
+  const T=(zh,en)=>lang==="zh"?zh:en;
+  return h("div",{
+    onClick:onClose,
+    style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:100,display:"flex",alignItems:"flex-end",justifyContent:"center"}},
+    h("div",{
+      onClick:e=>e.stopPropagation(),
+      style:{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:540,
+        padding:"0 0 32px",maxHeight:"92vh",overflowY:"auto"}},
+
+      // Handle bar
+      h("div",{style:{display:"flex",justifyContent:"center",padding:"10px 0 0"}},
+        h("div",{style:{width:40,height:4,background:"#ddd",borderRadius:2}})
+      ),
+
+      // Title row
+      h("div",{style:{display:"flex",alignItems:"center",padding:"12px 20px 0"}},
+        h("div",{style:{flex:1}},
+          h("div",{style:{fontSize:18,fontWeight:700,color:"#111"}},T("📲 加至主畫面","📲 Add to Home Screen")),
+          h("div",{style:{fontSize:12,color:"#999",marginTop:2}},T("跟住以下步驟，可以直接喺主畫面開 App","Follow the steps below to add this app to your home screen"))
+        ),
+        h("button",{onClick:onClose,style:{background:"#f0f0f0",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:16,color:"#666"}},"×")
+      ),
+
+      // Lang toggle
+      h("div",{style:{display:"flex",gap:6,padding:"12px 20px"}},
+        ["zh","en"].map(l=>
+          h("button",{key:l,onClick:()=>setLang(l),
+            style:{padding:"5px 16px",borderRadius:16,border:`1.5px solid ${lang===l?color:"#e0e0e0"}`,
+              background:lang===l?color:"#fff",color:lang===l?"#fff":"#666",
+              cursor:"pointer",fontSize:12,fontWeight:600}},
+            l==="zh"?"中文":"English")
+        )
+      ),
+
+      // OS tabs
+      h("div",{style:{display:"flex",gap:0,margin:"0 20px 16px",background:"#f5f5f5",borderRadius:10,padding:3}},
+        [["ios","🍎 iPhone / iPad"],["android","🤖 Android"]].map(([k,l])=>
+          h("button",{key:k,onClick:()=>setOs(k),
+            style:{flex:1,padding:"8px 0",border:"none",cursor:"pointer",fontSize:13,fontWeight:600,
+              borderRadius:8,background:os===k?"#fff":"transparent",
+              color:os===k?"#111":"#888",
+              boxShadow:os===k?"0 1px 4px rgba(0,0,0,0.1)":"none"}},l)
+        )
+      ),
+
+      // Steps
+      h("div",{style:{padding:"0 20px"}},
+        steps.map(([num,title,sub])=>
+          h("div",{key:num,style:{display:"flex",gap:12,marginBottom:16,alignItems:"flex-start"}},
+            h("div",{style:{width:28,height:28,borderRadius:"50%",background:color,
+              color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:13,fontWeight:700,flexShrink:0}},num),
+            h("div",null,
+              h("div",{style:{fontSize:14,fontWeight:600,color:"#111",lineHeight:1.4}},title),
+              sub&&h("div",{style:{fontSize:11,color:"#999",marginTop:2}},sub)
+            )
+          )
+        )
+      ),
+
+      // Note
+      h("div",{style:{margin:"4px 20px 0",background:"#f8f6ff",border:`1px solid ${color}30`,
+        borderRadius:10,padding:"10px 14px",fontSize:12,color:"#555"}},
+        T(
+          `💡 練習模式嘅錄音功能需要用 ${os==="ios"?"Safari":"Chrome"} 瀏覽器先有效`,
+          `💡 The practice mode recording requires ${os==="ios"?"Safari":"Chrome"} browser to work`
+        )
+      )
+    )
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────
 function App(){
   const [brand,setBrand]=useState("samsonite");
@@ -155,6 +262,8 @@ function App(){
   const tA=products.reduce((s,n)=>s+gs(n).attempts,0);
   const tC=products.reduce((s,n)=>s+gs(n).correct,0);
   const mas=products.filter(n=>{const s=gs(n);return s.attempts>=2&&s.correct/s.attempts>=0.8;}).length;
+  const [showInstall,setShowInstall]=useState(false);
+  const [lang,setLang]=useState("zh");
 
   const speak=(name,rate=0.82)=>{
     window.speechSynthesis.cancel();
@@ -169,10 +278,17 @@ function App(){
   const s=o=>Object.assign({},o); // style helper
 
   return h("div",{style:{minHeight:"100vh",background:"#f0f0ee"}},
+    showInstall&&h(InstallModal,{onClose:()=>setShowInstall(false),lang,setLang,color}),
     // Header
     h("div",{style:{background:color,transition:"background 0.3s"}},
       h("div",{style:{maxWidth:740,margin:"0 auto",padding:"16px 16px 0"}},
-        h("div",{style:{color:"rgba(255,255,255,0.4)",fontSize:9,letterSpacing:4,textTransform:"uppercase",fontFamily:"monospace",marginBottom:2}},"Product Pronunciation Trainer"),
+        h("div",{style:{display:"flex",alignItems:"center",marginBottom:6}},
+          h("div",{style:{color:"rgba(255,255,255,0.4)",fontSize:9,letterSpacing:4,textTransform:"uppercase",fontFamily:"monospace",flex:1}},"Product Pronunciation Trainer"),
+          h("button",{onClick:()=>setShowInstall(true),
+            style:{background:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.35)",
+              borderRadius:16,padding:"3px 10px",cursor:"pointer",color:"#fff",fontSize:11,fontWeight:600}},
+            "📲 加至主畫面")
+        ),
         // Brand row
         h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
           Object.entries(BRANDS).map(([k,b])=>
