@@ -4,6 +4,17 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Product Pronunciation Trainer</title>
+
+  <!-- PWA 設定：加至主畫面 icon + 主題色 -->
+  <meta name="theme-color" content="#4C4184"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Pronunciation"/>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%234C4184'/%3E%3Crect x='24' y='24' width='464' height='464' rx='92' fill='%23564891'/%3E%3Cpath d='M148 268 Q148 210 256 210 Q364 210 364 268 Q364 326 256 326 L220 326 L200 364 L192 326 Q148 322 148 268 Z' fill='white'/%3E%3Crect x='186' y='252' width='18' height='32' rx='7' fill='%234C4184'/%3E%3Crect x='214' y='236' width='18' height='64' rx='7' fill='%234C4184'/%3E%3Crect x='242' y='244' width='18' height='48' rx='7' fill='%234C4184'/%3E%3Crect x='270' y='254' width='18' height='28' rx='7' fill='%234C4184'/%3E%3Crect x='298' y='248' width='18' height='40' rx='7' fill='%234C4184'/%3E%3Cpath d='M376 268 Q392 268 392 284 Q392 300 376 300' fill='none' stroke='white' stroke-width='14' stroke-linecap='round'/%3E%3Cpath d='M384 250 Q408 250 408 284 Q408 318 384 318' fill='none' stroke='white' stroke-width='14' stroke-linecap='round' opacity='.55'/%3E%3Cpath d='M392 232 Q424 232 424 284 Q424 336 392 336' fill='none' stroke='white' stroke-width='14' stroke-linecap='round' opacity='.25'/%3E%3C/svg%3E"/>
+
+  <!-- Android / PWA manifest (inline) -->
+  <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Product+Pronunciation+Trainer%22%2C%22short_name%22%3A%22Pronunciation%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%234C4184%22%2C%22theme_color%22%3A%22%234C4184%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg+xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27+viewBox%3D%270+0+512+512%27%253E%253Crect+width%3D%27512%27+height%3D%27512%27+rx%3D%27115%27+fill%3D%27%25234C4184%27%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D"/>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   <style>
@@ -24,6 +35,19 @@
 <div id="root"></div>
 <script>
 const { useState, useEffect, useRef, createElement: h } = React;
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║            🚫 隱藏產品清單 — 喺呢度加唔想顯示的產品名稱            ║
+// ║  格式：每個名稱用引號包住，以逗號分隔                               ║
+// ║  大階唔影響（samsonite / AT 共用同一個清單）                        ║
+// ╚══════════════════════════════════════════════════════════════════╝
+const HIDDEN = new Set([
+  // 喺呢度加你想隱藏的產品，例如：
+  // "ROBEZ",
+  // "TOIIS BLOSSOM",
+  // "ACTIV8",
+]);
+// ═══════════════════════════════════════════════════════════════════
 
 // ── Data ──────────────────────────────────────────────────────────────
 const DATA = {
@@ -70,7 +94,7 @@ function App(){
   const [scores,setScores]=useState({});
 
   const color=BRANDS[brand].color;
-  const products=DATA[brand]?.[cat]||[];
+  const products=(DATA[brand]?.[cat]||[]).filter(p=>!HIDDEN.has(p));
   const filtered=products.filter(p=>p.toLowerCase().includes(search.toLowerCase()));
   const sk=name=>`${brand}-${cat}-${name}`;
   const gs=name=>scores[sk(name)]||{attempts:0,correct:0};
