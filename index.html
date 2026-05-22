@@ -268,7 +268,8 @@ function App(){
   const speak=(name,rate=0.82)=>{
     window.speechSynthesis.cancel();
     if(playing===name&&rate===0.82){setPlaying(null);return;}
-    const u=new SpeechSynthesisUtterance(name);
+    // 用音標文字讀出，避免 Android TTS 逐個字母串
+    const u=new SpeechSynthesisUtterance(gp(name));
     u.lang="en-US";u.rate=rate;
     u.onend=()=>setPlaying(null);u.onerror=()=>setPlaying(null);
     setPlaying(name);window.speechSynthesis.speak(u);
